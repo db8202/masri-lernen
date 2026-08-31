@@ -81,6 +81,9 @@ echo.
 echo  Deine App-URL:
 echo  https://%GH_USER%.github.io/%REPO_NAME%/
 echo.
+echo  Beispiel fuer dieses Projekt:
+echo  https://db8202.github.io/masri-lernen/
+echo.
 echo  Dann am Handy:
 echo  - URL oeffnen - Zum Startbildschirm hinzufuegen
 echo  - Tab Meine Woerter - Offline-Paket laden

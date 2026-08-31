@@ -79,7 +79,7 @@ function sessionOptions(opts = {}) {
 }
 
 function bindUI() {
-  $$('.tab').forEach((t) => t.addEventListener('click', () => switchView(t.dataset.view)));
+  $$('.nav-item').forEach((t) => t.addEventListener('click', () => switchView(t.dataset.view)));
   $('#btn-help').addEventListener('click', () => switchView('help'));
   $('#btn-profile').addEventListener('click', openProfileDialog);
   $$('[data-help]').forEach((btn) => {
@@ -118,6 +118,15 @@ function bindUI() {
     }
   }));
 
+  $$('.dir-btn').forEach((btn) => btn.addEventListener('click', () => {
+    $$('.dir-btn').forEach((b) => b.classList.remove('active'));
+    btn.classList.add('active');
+    if (state.settings) {
+      state.settings.direction = btn.dataset.dir;
+      saveSettings(state.activeProfileId, state.settings);
+    }
+  }));
+
   $('#flashcard').addEventListener('click', onCardTap);
   $('#btn-wrong').addEventListener('click', () => completeCard(0));
   $('#btn-correct').addEventListener('click', () => completeCard(2));
@@ -128,7 +137,7 @@ function bindUI() {
   $('#btn-type-check').addEventListener('click', checkTypedAnswer);
   $('#type-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') checkTypedAnswer(); });
 
-  ['input-daily-goal', 'select-direction', 'select-study-mode', 'select-speaker-gender',
+  ['input-daily-goal', 'select-speaker-gender',
     'check-gender-strict', 'check-words-only', 'check-reminder', 'input-reminder-time',
     'input-sheet-id', 'input-sync-url', 'input-sync-pass'].forEach((id) => {
     $(`#${id}`)?.addEventListener('change', onSettingsChange);
@@ -168,18 +177,22 @@ function bindUI() {
 
 function switchView(name) {
   $$('.view').forEach((v) => v.classList.remove('active'));
-  $$('.tab').forEach((t) => t.classList.toggle('active', t.dataset.view === name));
+  $$('.nav-item').forEach((t) => t.classList.toggle('active', t.dataset.view === name));
   $(`#view-${name}`)?.classList.add('active');
-  if (['home', 'stats', 'data', 'grammar', 'help'].includes(name)) renderAll();
+  const learning = name === 'learn';
+  document.body.classList.toggle('is-learning', learning);
+  $('#bottom-nav')?.classList.toggle('hidden', learning);
+  if (['home', 'stats', 'data', 'help'].includes(name)) renderAll();
   if (name === 'learn') resetLearnUI();
 }
 
 async function onSettingsChange() {
+  const dir = $('.dir-btn.active')?.dataset.dir || state.settings?.direction || 'de-eg';
   state.settings = {
     ...state.settings,
     dailyGoal: parseInt($('#input-daily-goal').value, 10) || 10,
-    direction: $('#select-direction').value,
-    studyMode: $('#select-study-mode').value,
+    direction: dir,
+    studyMode: state.selectedMode || state.settings?.studyMode || 'flashcard',
     speakerGender: $('#select-speaker-gender').value,
     genderStrict: $('#check-gender-strict').checked,
     wordsOnly: $('#check-words-only').checked,
@@ -446,6 +459,8 @@ function renderHome() {
   $('#daily-ring').style.setProperty('--pct', `${Math.min(100, Math.round((today / goal) * 100))}%`);
   $('#daily-message').textContent = today >= goal ? '🎉 Tagesziel erreicht!' : `${goal - today} bis Ziel · ${due} fällig`;
   $('#due-count').textContent = due;
+  const dir = state.settings?.direction || 'de-eg';
+  $$('.dir-btn').forEach((b) => b.classList.toggle('active', b.dataset.dir === dir));
   $$('.mode-btn').forEach((b) => b.classList.toggle('active', b.dataset.mode === state.selectedMode));
   const categories = [...new Set(state.vocabulary.map((v) => v.category))].sort();
   $('#category-grid').innerHTML = categories.map((cat) => {
@@ -466,8 +481,6 @@ async function renderStats() {
   $('#stat-today').textContent = getTodayCount(state.activeProfileId);
   const s = state.settings || {};
   $('#input-daily-goal').value = s.dailyGoal || 10;
-  $('#select-direction').value = s.direction || 'de-eg';
-  $('#select-study-mode').value = s.studyMode || 'flashcard';
   $('#select-speaker-gender').value = s.speakerGender || 'n';
   $('#check-gender-strict').checked = !!s.genderStrict;
   $('#check-words-only').checked = !!s.wordsOnly;

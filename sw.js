@@ -1,4 +1,4 @@
-const CACHE = 'masri-lernen-v5';
+const CACHE = 'masri-lernen-v6';
 const ASSETS = [
   './', './index.html', './manifest.json', './css/styles.css',
   './js/app.js', './js/storage.js', './js/srs.js', './js/speech.js',
