@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#0f766e">
+  <meta name="description" content="Ägyptisch-Arabisch lernen – Vokabeln, Quiz, Offline">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Masri Lernen</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon.svg">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div id="app">
+    <header class="header">
+      <div class="header-top">
+        <h1 class="logo">🇪🇬 Masri Lernen</h1>
+        <button class="icon-btn" id="btn-help" aria-label="Hilfe">❓</button>
+        <button class="icon-btn" id="btn-profile" aria-label="Profil">👤</button>
+      </div>
+      <p class="subtitle" id="profile-greeting">Ägyptisch-Arabisch · Deutsch</p>
+    </header>
+
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-view="home" role="tab">Start</button>
+      <button class="tab" data-view="learn" role="tab">Lernen</button>
+      <button class="tab" data-view="grammar" role="tab">Grammatik</button>
+      <button class="tab" data-view="stats" role="tab">Statistik</button>
+      <button class="tab" data-view="help" role="tab">Hilfe</button>
+      <button class="tab" data-view="data" role="tab">Meine Wörter</button>
+    </nav>
+
+    <main class="main">
+      <!-- START -->
+      <section id="view-home" class="view active">
+        <div class="card daily-card">
+          <h2>Tagesziel</h2>
+          <div class="daily-progress">
+            <div class="progress-ring" id="daily-ring">
+              <span id="daily-count">0</span>
+              <small>/ <span id="daily-goal">10</span></small>
+            </div>
+            <div>
+              <p id="daily-message">Starte deine Lektion!</p>
+              <button class="btn btn-primary btn-large" id="btn-start-daily">Jetzt lernen</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Lernmodus</h2>
+          <p class="help-inline">🃏 Karte umdrehen · 🔘 4 Antworten · ⌨️ selbst eintippen — <button type="button" class="link-btn" data-help="modes">Mehr erklärt</button></p>
+          <div class="mode-grid">
+            <button class="mode-btn active" data-mode="flashcard">🃏 Karteikarten</button>
+            <button class="mode-btn" data-mode="mc">🔘 Auswahl</button>
+            <button class="mode-btn" data-mode="type">⌨️ Eingabe</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>📋 Meine Listen</h2>
+          <p class="help-inline">Eigene Wortlisten — z.B. „Flughafen" oder „Diese Woche". <button type="button" class="link-btn" data-help="playlists">So geht's</button></p>
+          <div class="playlist-grid" id="playlist-grid"></div>
+          <button class="btn btn-secondary" id="btn-new-playlist">+ Neue Liste erstellen</button>
+        </div>
+
+        <div class="card">
+          <h2>Kategorien</h2>
+          <div class="category-grid" id="category-grid"></div>
+        </div>
+
+        <div class="card">
+          <h2>Schnellstart</h2>
+          <div class="quick-actions">
+            <button class="btn btn-secondary" id="btn-review-due">🔄 Wiederholen (<span id="due-count">0</span>)</button>
+            <button class="btn btn-secondary" id="btn-all-words">📚 Alle Vokabeln</button>
+            <button class="btn btn-secondary" id="btn-sentences">💬 Sätze üben</button>
+            <button class="btn btn-secondary" id="btn-record-assistant">🎙️ Aufnahmen fehlen (<span id="missing-audio-count">0</span>)</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- LERNEN -->
+      <section id="view-learn" class="view">
+        <div class="learn-header">
+          <button class="icon-btn" id="btn-back-learn" aria-label="Zurück">←</button>
+          <span id="learn-mode-label">Karteikarten</span>
+          <span id="learn-counter">0 / 0</span>
+        </div>
+        <div class="record-assistant-banner hidden" id="record-assistant-banner">
+          <strong>🎙️ Aufnahme-Assistent</strong>
+          <p id="record-assistant-hint">Nimm die Aussprache für jedes Wort auf.</p>
+        </div>
+
+        <!-- Karteikarten -->
+        <div id="panel-flashcard" class="learn-panel">
+          <div class="flashcard-container" id="flashcard-container">
+            <div class="flashcard" id="flashcard">
+              <div class="flashcard-inner">
+                <div class="flashcard-front">
+                  <span class="card-type" id="card-type-badge">Wort</span>
+                  <span class="card-category" id="card-category"></span>
+                  <p class="card-main" id="card-front-text"></p>
+                  <p class="card-hint">Tippe für die Antwort</p>
+                </div>
+                <div class="flashcard-back">
+                  <p class="card-arabic" id="card-arabic" dir="rtl"></p>
+                  <p class="card-translit" id="card-translit"></p>
+                  <p class="card-note" id="card-note"></p>
+                  <div class="audio-row">
+                    <button class="btn btn-audio" id="btn-speak">🔊 Abspielen</button>
+                    <button class="btn btn-audio btn-record" id="btn-record">🎙️ Aufnahme</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="learn-actions hidden" id="learn-actions">
+            <button class="btn btn-wrong" id="btn-wrong">Noch üben</button>
+            <button class="btn btn-correct" id="btn-correct">Gewusst ✓</button>
+          </div>
+          <div class="record-assistant-actions hidden" id="record-assistant-actions">
+            <button class="btn btn-secondary" id="btn-record-skip">Überspringen</button>
+            <button class="btn btn-primary" id="btn-record-done">Fertig → Weiter</button>
+          </div>
+        </div>
+
+        <!-- Multiple Choice -->
+        <div id="panel-mc" class="learn-panel hidden">
+          <div class="quiz-prompt">
+            <span class="card-category" id="mc-category"></span>
+            <p class="card-main" id="mc-prompt"></p>
+            <p class="card-hint" id="mc-hint"></p>
+          </div>
+          <div class="mc-options" id="mc-options"></div>
+        </div>
+
+        <!-- Eingabe -->
+        <div id="panel-type" class="learn-panel hidden">
+          <div class="quiz-prompt">
+            <span class="card-category" id="type-category"></span>
+            <p class="card-main" id="type-prompt"></p>
+          </div>
+          <input type="text" class="type-input" id="type-input" autocomplete="off" autocapitalize="off">
+          <button class="btn btn-primary btn-large" id="btn-type-check">Prüfen</button>
+          <p class="type-feedback hidden" id="type-feedback"></p>
+        </div>
+
+        <div class="learn-finished hidden" id="learn-finished">
+          <h2>🎉 Geschafft!</h2>
+          <p id="finished-summary"></p>
+          <button class="btn btn-primary" id="btn-finished-home">Zurück zum Start</button>
+        </div>
+      </section>
+
+      <!-- GRAMMATIK -->
+      <section id="view-grammar" class="view">
+        <div id="grammar-list"></div>
+      </section>
+
+      <!-- STATISTIK -->
+      <section id="view-stats" class="view">
+        <div class="card">
+          <h2>Dein Fortschritt</h2>
+          <div class="stats-grid">
+            <div class="stat-box"><span class="stat-num" id="stat-total">0</span><span class="stat-label">Gesamt</span></div>
+            <div class="stat-box"><span class="stat-num" id="stat-learned">0</span><span class="stat-label">Gelernt</span></div>
+            <div class="stat-box"><span class="stat-num" id="stat-streak">0</span><span class="stat-label">Streak</span></div>
+            <div class="stat-box"><span class="stat-num" id="stat-today">0</span><span class="stat-label">Heute</span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Lernverlauf (14 Tage)</h2>
+          <div id="progress-chart"></div>
+        </div>
+
+        <div class="card">
+          <h2>Nach Kategorie</h2>
+          <div id="category-stats"></div>
+        </div>
+
+        <div class="card">
+          <h2>Schwierige Wörter</h2>
+          <ul class="hard-list" id="hard-list"></ul>
+        </div>
+
+        <div class="card">
+          <h2>Einstellungen</h2>
+          <label class="setting-row"><span>Tagesziel</span><input type="number" id="input-daily-goal" min="5" max="50" value="10"></label>
+          <label class="setting-row">
+            <span>Richtung</span>
+            <select id="select-direction">
+              <option value="de-eg">Deutsch → Ägyptisch</option>
+              <option value="eg-de">Ägyptisch → Deutsch</option>
+              <option value="mixed">Gemischt</option>
+            </select>
+          </label>
+          <label class="setting-row">
+            <span>Lernmodus</span>
+            <select id="select-study-mode">
+              <option value="flashcard">Karteikarten</option>
+              <option value="mc">Auswahl-Quiz</option>
+              <option value="type">Eingabe-Quiz</option>
+            </select>
+          </label>
+          <label class="setting-row">
+            <span>Ich spreche als</span>
+            <select id="select-speaker-gender">
+              <option value="n">Beides zeigen</option>
+              <option value="m">Mann ♂</option>
+              <option value="w">Frau ♀</option>
+            </select>
+          </label>
+          <label class="setting-row"><span>Nur passendes Geschlecht</span><input type="checkbox" id="check-gender-strict"></label>
+          <label class="setting-row"><span>Nur Wörter (keine Sätze)</span><input type="checkbox" id="check-words-only"></label>
+          <label class="setting-row"><span>Tägliche Erinnerung</span><input type="checkbox" id="check-reminder"></label>
+          <label class="setting-row"><span>Erinnerungszeit</span><input type="time" id="input-reminder-time" value="18:00"></label>
+          <button class="btn btn-secondary" id="btn-enable-notifications">🔔 Benachrichtigungen aktivieren</button>
+        </div>
+      </section>
+
+      <!-- HILFE -->
+      <section id="view-help" class="view">
+        <div class="card help-card">
+          <h2>🚀 Erste Schritte</h2>
+          <ol class="help-steps">
+            <li>Tippe auf <strong>„Jetzt lernen"</strong></li>
+            <li>Tippe auf die Karte → Antwort sehen</li>
+            <li><strong>„Gewusst"</strong> oder <strong>„Noch üben"</strong></li>
+            <li>🔊 drücken für Aussprache</li>
+          </ol>
+        </div>
+        <div class="card help-card">
+          <h2>🔊 Sprachdateien – wichtig!</h2>
+          <div class="help-body" id="help-audio-text"></div>
+          <button type="button" class="btn btn-secondary" data-help="audio">Ausführliche Erklärung</button>
+        </div>
+        <div class="card help-card">
+          <h2>📥 Offline lernen</h2>
+          <p class="hint">Einmal mit Internet: App installieren → Tab „Meine Wörter" → „Offline-Paket laden"</p>
+          <button type="button" class="btn btn-secondary" data-help="offline">Anleitung anzeigen</button>
+        </div>
+        <div class="card help-card">
+          <h2>📄 Vokabeln aus Excel</h2>
+          <p class="hint">Excel-Vorlage laden, ausfüllen, hochladen — fertig.</p>
+          <button type="button" class="btn btn-secondary" data-help="excel">Anleitung anzeigen</button>
+        </div>
+        <div class="card help-card">
+          <h2>📋 Eigene Listen & Kategorien</h2>
+          <p class="hint">Listen = freie Wortauswahl · Kategorien = beim Eintragen vergeben · Kategorien verwalten unter „Meine Wörter"</p>
+          <button type="button" class="btn btn-secondary" data-help="playlists">Listen-Anleitung</button>
+        </div>
+        <div class="card help-card">
+          <h2>📦 Gratis Vokabel-Paket</h2>
+          <p class="hint">~6.300 Wörter mit Audio — Tab „Meine Wörter" → „Vokabel-Paket laden"</p>
+          <button type="button" class="btn btn-secondary" data-help="pack">Mehr erfahren</button>
+        </div>
+        <div class="card help-card">
+          <h2>🌐 Online von überall</h2>
+          <p class="hint">Kostenlos auf GitHub hosten — siehe HOSTING-ANLEITUNG.md im Projektordner.</p>
+        </div>
+        <div class="card help-card">
+          <h2>❓ Was bedeuten die Tabs?</h2>
+          <ul class="help-list">
+            <li><strong>Start</strong> — Lernen beginnen</li>
+            <li><strong>Lernen</strong> — Karteikarten (während Lektion)</li>
+            <li><strong>Grammatik</strong> — Kurz-Erklärungen</li>
+            <li><strong>Statistik</strong> — Fortschritt & Einstellungen</li>
+            <li><strong>Hilfe</strong> — Anleitungen & Erklärungen (du bist hier 😊)</li>
+            <li><strong>Meine Wörter</strong> — Vokabeln hinzufügen & importieren</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- DATEN → Meine Wörter -->
+      <section id="view-data" class="view">
+        <div class="card">
+          <h2>📦 Gratis Vokabel-Paket</h2>
+          <p class="help-inline">~6.300 ägyptische Wörter mit <strong>offizieller Lingualism-Aussprache</strong> (Audio-Links). Einmal laden, dann in „Meine Wörter" auf Deutsch anpassen.</p>
+          <button class="btn btn-primary btn-large" id="btn-import-pack">📥 Vokabel-Paket laden</button>
+          <p class="hint" id="pack-import-status">Internet nötig — dauert 1–2 Minuten.</p>
+        </div>
+
+        <div class="card">
+          <h2>📋 Meine Listen</h2>
+          <p class="help-inline">Eigene Lernlisten mit ausgewählten Wörtern — unabhängig von Kategorien.</p>
+          <div class="playlist-list" id="playlist-list"></div>
+          <button class="btn btn-secondary" id="btn-new-playlist-data">+ Neue Liste</button>
+        </div>
+
+        <div class="card">
+          <h2>📁 Kategorien verwalten</h2>
+          <p class="help-inline">Umbenennen, zusammenführen oder leere Kategorien aufräumen.</p>
+          <div class="category-manager" id="category-manager"></div>
+        </div>
+
+        <div class="card">
+          <h2>🎙️ Aufnahme-Assistent</h2>
+          <p class="help-inline">Führt dich Wort für Wort durch alle Vokabeln <em>ohne</em> gespeicherte Aufnahme oder Audio-Link.</p>
+          <button class="btn btn-primary" id="btn-record-assistant-data">Aufnahmen starten (<span id="missing-audio-count-data">0</span> fehlen)</button>
+        </div>
+
+        <div class="card">
+          <h2>✏️ Neue Vokabel eintragen</h2>
+          <p class="help-inline">Einfach ausfüllen und Speichern. Für Audio: MP3 hochladen <em>oder</em> Dateiname eintragen (z.B. <code>brot.mp3</code>).</p>
+          <form id="vocab-form" class="vocab-form">
+            <input type="hidden" id="vocab-id">
+            <label>Kategorie<input type="text" id="vocab-category" list="category-suggestions" required placeholder="z.B. Lebensmittel"></label>
+            <datalist id="category-suggestions"></datalist>
+            <label>Deutsch<input type="text" id="vocab-german" required placeholder="z.B. Brot"></label>
+            <label>Ägyptisch (Arabisch)<input type="text" id="vocab-egyptian" dir="rtl" required placeholder="عيش"></label>
+            <label>Aussprache (Lautschrift)<input type="text" id="vocab-translit" placeholder="z.B. Aisch"></label>
+            <label>Geschlecht
+              <select id="vocab-gender"><option value="n">Neutral / egal</option><option value="m">Mann sagt so</option><option value="w">Frau sagt so</option></select>
+            </label>
+            <label>Typ
+              <select id="vocab-type"><option value="word">Einzelnes Wort</option><option value="sentence">Ganzer Satz</option></select>
+            </label>
+            <label>Notiz (optional)<input type="text" id="vocab-note" placeholder="z.B. Umgangssprache"></label>
+            <div class="help-box">
+              <strong>🔊 Audio für diese Vokabel</strong>
+              <p class="hint">Die App sucht automatisch nach <code>audio/[deutsches Wort].mp3</code> — z.B. „Brot" → <code>brot.mp3</code></p>
+              <label>Sprachdatei-Name (optional)<input type="text" id="vocab-audio-file" placeholder="wird automatisch vorgeschlagen"></label>
+              <p class="audio-hint" id="vocab-audio-hint"></p>
+              <label>Oder MP3 direkt hochladen<input type="file" id="vocab-audio-upload" accept="audio/*"></label>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary" id="vocab-save">💾 Speichern</button>
+              <button type="button" class="btn btn-ghost" id="vocab-clear">Leeren</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2>📄 Viele Wörter auf einmal (Excel)</h2>
+          <p class="help-inline">Excel-Vorlage laden → ausfüllen → hier hochladen. Spalte <code>audio_datei</code> optional (z.B. brot.mp3).</p>
+          <div class="upload-zone" id="upload-zone">
+            <p>📄 Excel- oder CSV-Datei antippen</p>
+            <p class="small">.xlsx · .xls · .csv</p>
+            <input type="file" id="file-input" accept=".xlsx,.xls,.csv" hidden>
+          </div>
+          <button class="btn btn-secondary" id="btn-download-template">📥 Excel-Vorlage herunterladen</button>
+        </div>
+
+        <div class="card">
+          <h2>🔊 Sprachdateien & Offline</h2>
+          <p class="help-inline">MP3s hochladen oder in den <code>audio/</code>-Ordner legen. Dann Offline-Paket laden für Flugmodus.</p>
+          <div class="upload-zone" id="audio-upload-zone">
+            <p>🔊 Mehrere MP3s auf einmal hochladen</p>
+            <p class="small">Dateiname = deutsches Wort (brot.mp3) oder Vokabel-ID (l1.mp3)</p>
+            <input type="file" id="audio-file-input" accept="audio/*" multiple hidden>
+          </div>
+          <button class="btn btn-primary btn-large" id="btn-offline-pack">📥 Offline-Paket laden</button>
+          <p class="hint" id="offline-status">Einmal mit Internet nötig — danach auch ohne Netz lernen.</p>
+        </div>
+
+        <details class="card expert-section">
+          <summary>⚙️ Experten-Bereich (Google Sheet, Cloud-Sync, Backup)</summary>
+          <p class="hint">Nur nötig wenn du Vokabeln online synchronisieren willst.</p>
+          <label class="setting-row full"><span>Google Sheet ID/URL</span>
+            <input type="text" id="input-sheet-id" placeholder="Sheet-ID oder URL"></label>
+          <button class="btn btn-secondary" id="btn-sync-sheet">☁️ Vokabeln aus Google Sheet laden</button>
+          <label class="setting-row full"><span>Sync Web-App URL</span>
+            <input type="text" id="input-sync-url" placeholder="Google Apps Script URL"></label>
+          <label class="setting-row full"><span>Sync-Passphrase</span>
+            <input type="text" id="input-sync-pass" placeholder="Geheimer Code"></label>
+          <button class="btn btn-secondary" id="btn-cloud-sync">🔄 Geräte-Sync</button>
+          <div class="data-actions">
+            <button class="btn btn-secondary" id="btn-export">📤 Backup exportieren</button>
+            <button class="btn btn-secondary" id="btn-import-backup">📥 Backup importieren</button>
+            <input type="file" id="backup-input" accept=".json" hidden>
+            <button class="btn btn-secondary" id="btn-share-backup">📲 Backup teilen</button>
+            <button class="btn btn-danger" id="btn-reset-progress">Fortschritt zurücksetzen</button>
+          </div>
+        </details>
+
+        <div class="card">
+          <h2>📚 Alle Wörter (<span id="vocab-count">0</span>)</h2>
+          <input type="search" class="search-input" id="vocab-search" placeholder="Suchen...">
+          <div class="vocab-list" id="vocab-list"></div>
+        </div>
+      </section>
+    </main>
+
+    <dialog id="playlist-dialog" class="modal">
+      <h2 id="playlist-dialog-title">Neue Liste</h2>
+      <form id="playlist-form">
+        <input type="hidden" id="playlist-id">
+        <label>Listen-Name<input type="text" id="playlist-name" required placeholder="z.B. Flughafen" maxlength="40"></label>
+        <label class="playlist-picker-label">Wörter auswählen
+          <input type="search" class="search-input" id="playlist-word-search" placeholder="Suchen…">
+        </label>
+        <div class="playlist-picker" id="playlist-word-picker"></div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">💾 Speichern</button>
+          <button type="button" class="btn btn-danger hidden" id="btn-delete-playlist">Liste löschen</button>
+        </div>
+      </form>
+      <button class="btn btn-ghost modal-close" data-close="playlist-dialog">Abbrechen</button>
+    </dialog>
+
+    <dialog id="help-dialog" class="modal help-modal">
+      <h2 id="help-dialog-title">Hilfe</h2>
+      <pre class="help-dialog-body" id="help-dialog-body"></pre>
+      <button class="btn btn-primary modal-close" data-close="help-dialog">Verstanden ✓</button>
+    </dialog>
+
+    <dialog id="profile-dialog" class="modal">
+      <h2>Profil wählen</h2>
+      <div id="profile-list" class="profile-list"></div>
+      <form id="profile-form" class="profile-form">
+        <input type="text" id="new-profile-name" placeholder="Neuer Name" required maxlength="20">
+        <button type="submit" class="btn btn-primary">Anlegen</button>
+      </form>
+      <button class="btn btn-ghost modal-close" data-close="profile-dialog">Schließen</button>
+    </dialog>
+
+    <div class="install-banner hidden" id="install-banner">
+      <p>📱 App installieren für Offline-Nutzung</p>
+      <button class="btn btn-primary btn-sm" id="btn-install">Installieren</button>
+      <button class="icon-btn" id="btn-dismiss-install">✕</button>
+    </div>
+  </div>
+
+  <script src="js/xlsx.full.min.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

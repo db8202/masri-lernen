@@ -1,0 +1,16 @@
+{
+  "name": "aegyptisch-lernen",
+  "version": "1.0.0",
+  "description": "Kostenlose Progressive Web App (PWA) zum Lernen von **Ägyptisch-Arabisch (Umgangssprache)** mit Deutsch. Funktioniert auf dem Handy, offline, ohne Konto und ohne Kosten.",
+  "main": "sw.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "xlsx": "^0.18.5"
+  }
+}

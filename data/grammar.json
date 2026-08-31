@@ -1,0 +1,59 @@
+[
+  {
+    "id": "gr1",
+    "title": "Masri vs. Hocharabisch",
+    "summary": "In Ägypten spricht man im Alltag Masri – nicht die formelle Sprache der Nachrichten.",
+    "points": [
+      "Masri (ägyptisch-arabisch) = Umgangssprache auf der Straße, im Shop, zu Hause",
+      "Hocharabisch = formell, Bücher, Nachrichten – klingt steif im Alltag",
+      "Merkmal: hartes G statt weichem DSCH (Dschamal → Gamal)"
+    ]
+  },
+  {
+    "id": "gr2",
+    "title": "Geschlecht – Mann und Frau",
+    "summary": "Viele Formen unterscheiden sich je nachdem, ob du als Mann oder Frau sprichst.",
+    "points": [
+      "Ich möchte: ana aiyz (Mann) / ana aiza (Frau)",
+      "Wie geht es dir?: izzayak? (Mann) / izzayik? (Frau)",
+      "Entschuldigung: aasif (Mann) / aasfa (Frau)",
+      "Ich verstehe nicht: misch faahm (Mann) / misch faahma (Frau)",
+      "Adjektive enden oft auf -a für weibliche Form (ta'baan → ta'baana)"
+    ]
+  },
+  {
+    "id": "gr3",
+    "title": "Wichtige Alltags-Strukturen",
+    "summary": "Typische Satzbausteine im Ägyptischen.",
+    "points": [
+      "Ich möchte: ana aiyz … = ich möchte …",
+      "Frage mit was: … eh? (Was machst du? = bit'amel eh?)",
+      "Frage mit wo: fein …? (Wo ist …? = fein el-hammam?)",
+      "Frage mit wie viel: bikam? / bikam da?",
+      "Verneinung: misch … = nicht … (misch faahm = ich verstehe nicht)"
+    ]
+  },
+  {
+    "id": "gr4",
+    "title": "Zahlen und Einkaufen",
+    "summary": "Zahlen sind essentiell – besonders auf dem Basar.",
+    "points": [
+      "1–10: wahid, itnein, talata, arbaa, chamsa, sitta, sabaa, tamanya, tisaa, aschara",
+      "Wie viel kostet das?: bikam da?",
+      "Zu teuer!: da ghali awi",
+      "Kein Problem: maalesch (sehr häufig!)"
+    ]
+  },
+  {
+    "id": "gr5",
+    "title": "Höflichkeit und Kultur",
+    "summary": "Kleine Worte, große Wirkung.",
+    "points": [
+      "Salam aleikum / Ahlan = Begrüßung",
+      "Schukran = Danke (unverzichtbar)",
+      "Inschallah = so Gott will (Alltag in fast jedem Satz)",
+      "Maalesch = kein Problem / schon okay",
+      "Fi sahetak = guten Appetit / prost"
+    ]
+  }
+]

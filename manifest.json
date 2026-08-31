@@ -1,0 +1,19 @@
+{
+  "name": "Masri Lernen – Ägyptisch-Arabisch",
+  "short_name": "Masri Lernen",
+  "description": "Deutsch ↔ Ägyptisch-Arabisch Vokabeltrainer mit Offline-Modus",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0b1220",
+  "theme_color": "#0f766e",
+  "orientation": "portrait",
+  "lang": "de",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
