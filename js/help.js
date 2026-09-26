@@ -5,14 +5,13 @@ export const HELP = {
 Nur Deutsch ↔ ägyptisches Arabisch (Masri) — kein Englisch.`,
 
   audio: `Aussprache
-1. Eigene Aufnahme
-2. MP3 / Link (online) bzw. einmal einrichten (offline)
-3. Computer-Stimme
+1. 🎙️ Eigene Aufnahme auf der Karte
+2. MP3 / Link (falls hinterlegt)
+3. Computer-Stimme (sonst Lautschrift)
 
-Kein Ton? Toast erklärt warum.
-Besser: 🎙️ aufnehmen oder MP3s unter Wörter.`,
+Besser: 🎙️ Aufnahme auf der Karte.`,
 
-  offline: `Wörter → „Aussprache einrichten (einmal)“ (WLAN). Danach offline.`,
+  offline: `🎙️ Aufnahme auf der Karte speichert den Ton lokal (auch offline).`,
 
   excel: `Wörter → Excel → Vorlage (Deutsch + Masri) → ausfüllen → hochladen.`,
 

@@ -4,6 +4,8 @@ import { toast } from './toast.js';
 
 let arabicVoice = null;
 let voicesReady = false;
+/** Einmaliger Hinweis pro Sitzung bei Lautschrift-TTS */
+let translitTipShown = false;
 
 function loadVoices() {
   return new Promise((resolve) => {
@@ -46,13 +48,20 @@ export function setSpeakButtonState(btn, state, label) {
   else btn.textContent = btn.dataset.idleLabel;
 }
 
+function flashError(button, ms = 2000) {
+  setSpeakButtonState(button, 'error');
+  setTimeout(() => setSpeakButtonState(button, 'idle'), ms);
+}
+
 /**
- * Abspiel-Reihenfolge: eigene Aufnahme → Paket/URL → lokal → TTS.
- * Liefert { ok, source, message } und zeigt Toasts bei Fallbacks/Fehlern.
+ * Abspiel-Reihenfolge: eigene Aufnahme → URL/Datei → TTS.
+ * Kein Dauer-Toast: Hinweise höchstens einmalig; Fehler nur wenn gar nichts ging.
  */
 export async function speakCard(card, options = {}) {
   const { button = null, silent = false } = options;
-  const notify = (msg, type = 'info') => { if (!silent && msg) toast(msg, type, 4000); };
+  const notify = (msg, type = 'info', ms = 3500) => {
+    if (!silent && msg) toast(msg, type, ms);
+  };
 
   if (!card) {
     notify('Keine Vokabel zum Abspielen.', 'warn');
@@ -61,7 +70,7 @@ export async function speakCard(card, options = {}) {
 
   setSpeakButtonState(button, 'loading');
 
-  // 1) Eigene Aufnahme
+  // 1) Eigene Aufnahme (lokal / IndexedDB)
   if (card.audioData) {
     try {
       setSpeakButtonState(button, 'playing');
@@ -69,52 +78,56 @@ export async function speakCard(card, options = {}) {
       setSpeakButtonState(button, 'idle');
       return { ok: true, source: 'recorded', message: null };
     } catch {
-      notify('Eigene Aufnahme fehlgeschlagen – versuche andere Quelle…', 'warn');
+      // still leise weiter zu URL / TTS
     }
   }
 
-  // 2) Offizielle URL / lokales audio/ (externe URLs: Direct-Play)
+  // 2) Externe URL / lokale Datei
+  const hasExplicitAudio = !!(card.audioUrl?.trim() || card.audioFile?.trim());
   const fileResult = await playOfficialAudio(card, () => setSpeakButtonState(button, 'playing'));
   if (fileResult.ok) {
     setSpeakButtonState(button, 'idle');
     return { ok: true, source: fileResult.source || 'file', message: null };
   }
-  if (fileResult.tried && fileResult.reason === 'autoplay') {
-    notify('Browser blockiert Audio – bitte nochmals tippen.', 'warn');
-  } else if (fileResult.tried && fileResult.reason === 'play-error') {
-    notify('Sprachdatei nicht abspielbar – versuche Computer-Stimme…', 'warn');
+
+  // Nur Autoplay ist unmittelbar handlungsrelevant
+  if (fileResult.reason === 'autoplay') {
+    notify('Browser blockiert Audio – bitte nochmals tippen.', 'warn', 3000);
   }
 
-  // 3) TTS-Fallback
+  // 3) TTS-Fallback (Lautschrift leise, wenn keine Arabisch-Stimme)
   const text = card?.egyptian || card?.text;
   const transliteration = card?.transliteration;
   if (!text && !transliteration) {
-    setSpeakButtonState(button, 'error');
-    notify('Keine Sprachdatei und kein Text zum Vorlesen.', 'error');
-    setTimeout(() => setSpeakButtonState(button, 'idle'), 2000);
+    flashError(button);
+    notify(
+      hasExplicitAudio
+        ? 'Sprachdatei nicht abspielbar.'
+        : 'Kein Ton – 🎙️ Aufnahme auf der Karte.',
+      'error',
+      3000,
+    );
     return { ok: false, source: 'none', message: 'Kein Text' };
   }
 
-  const tts = await speakArabic(text, transliteration, { notify: !silent });
+  const tts = await speakArabic(text, transliteration);
   if (tts.ok) {
     setSpeakButtonState(button, 'playing');
-    setTimeout(() => setSpeakButtonState(button, 'idle'), Math.max(800, (tts.durationMs || 1200)));
-    if (tts.usedTransliteration) {
-      notify('Keine Arabisch-Stimme – Lautschrift. Besser: Aufnahme oder Aussprache einrichten.', 'warn');
-    } else if (fileResult.tried) {
-      notify('Keine Sprachdatei – Computer-Stimme.', 'info');
+    setTimeout(() => setSpeakButtonState(button, 'idle'), Math.max(800, tts.durationMs || 1200));
+    // Einmaliger, kurzer Hinweis – kein Dauer-Nörgeln bei jedem Tap
+    if (tts.usedTransliteration && !translitTipShown && !silent) {
+      translitTipShown = true;
+      notify('Lautschrift (Näherung). Besser: 🎙️ Aufnahme auf der Karte.', 'info', 3200);
     }
     return { ok: true, source: 'tts', message: tts.message };
   }
 
-  setSpeakButtonState(button, 'error');
-  notify(tts.message || 'Auf diesem Gerät keine Aussprache möglich.', 'error');
-  setTimeout(() => setSpeakButtonState(button, 'idle'), 2500);
+  flashError(button, 2500);
+  notify(tts.message || 'Kein Ton möglich – 🎙️ Aufnahme auf der Karte.', 'error', 3500);
   return { ok: false, source: 'none', message: tts.message };
 }
 
-export function speakArabic(text, transliteration, options = {}) {
-  const { notify = false } = options;
+export function speakArabic(text, transliteration) {
   return new Promise((resolve) => {
     if (!('speechSynthesis' in window)) {
       resolve({ ok: false, message: 'Dieses Gerät unterstützt keine Computer-Stimme.', usedTransliteration: false });
@@ -172,7 +185,7 @@ export function speakArabic(text, transliteration, options = {}) {
         });
         fallback.onerror = () => done({
           ok: false,
-          message: 'Auf diesem Handy keine Arabisch-Stimme.',
+          message: 'Kein Ton möglich – 🎙️ Aufnahme auf der Karte.',
           usedTransliteration: true,
         });
         speechSynthesis.speak(fallback);
@@ -182,22 +195,20 @@ export function speakArabic(text, transliteration, options = {}) {
         ok: false,
         message: arabicVoice
           ? 'Computer-Stimme fehlgeschlagen.'
-          : 'Auf diesem Handy keine Arabisch-Stimme.',
+          : 'Kein Ton möglich – 🎙️ Aufnahme auf der Karte.',
         usedTransliteration: !!useTranslit,
       });
     };
 
     try {
       speechSynthesis.speak(utter);
-      // Manche Browser feuern weder end noch error bei leerer Stimme
+      // Manche Browser feuern weder end noch error
       setTimeout(() => {
         if (!settled && speechSynthesis.speaking) return;
         if (!settled) {
           done({
-            ok: !useTranslit || !!transliteration,
-            message: useTranslit
-              ? 'Lautschrift (Näherung) – bessere Aussprache per Aufnahme.'
-              : null,
+            ok: true,
+            message: useTranslit ? 'Lautschrift gesprochen' : null,
             usedTransliteration: !!useTranslit,
             durationMs: 1500,
           });
@@ -209,10 +220,6 @@ export function speakArabic(text, transliteration, options = {}) {
         message: 'Aussprache konnte nicht gestartet werden.',
         usedTransliteration: false,
       });
-    }
-
-    if (notify && useTranslit) {
-      // Toast kommt aus speakCard – hier nur Flag
     }
   });
 }

@@ -85,21 +85,41 @@ function playBlob(blob, onStart) {
   });
 }
 
-/** Direkt abspielen (kein fetch) – funktioniert trotz CORS für <audio> */
+/**
+ * Direkt abspielen via HTMLAudioElement – kein fetch, daher kein CORS-Block
+ * für die reine Wiedergabe (typisch bei CDN-/http(s)-Links).
+ */
 function playUrlDirect(url, onStart) {
   return new Promise((resolve, reject) => {
-    const audio = new Audio(url);
+    const audio = new Audio();
     let settled = false;
+    let started = false;
     const done = (fn, arg) => {
       if (settled) return;
       settled = true;
+      clearTimeout(watchdog);
+      audio.onended = null;
+      audio.onerror = null;
       fn(arg);
     };
+    const watchdog = setTimeout(() => {
+      if (!started) done(reject, new Error('timeout'));
+    }, 12000);
+    audio.preload = 'auto';
     audio.onended = () => done(resolve);
     audio.onerror = () => done(reject, new Error('Abspielen fehlgeschlagen'));
-    audio.play().then(() => {
+    audio.src = url;
+    // play() im Tap-Kontext starten – zuverlässiger als erst auf canplay zu warten
+    const p = audio.play();
+    if (p && typeof p.then === 'function') {
+      p.then(() => {
+        started = true;
+        onStart?.();
+      }).catch((err) => done(reject, err));
+    } else {
+      started = true;
       onStart?.();
-    }).catch((err) => done(reject, err));
+    }
   });
 }
 
@@ -112,8 +132,8 @@ function urlsForDirectPlay(url) {
 
 /**
  * Versucht alle Kandidaten.
- * Externe http(s): direkt new Audio(url) – kein fetch/CORS.
- * Lokal ./audio/: Cache API + fetch + blob.
+ * Externe http(s): direkt new Audio(url).play() – kein fetch/CORS.
+ * Lokal ./audio/: Cache API + fetch + blob; bei Fehlschlag noch Direct-Play.
  */
 export async function playOfficialAudio(card, onStart) {
   const candidates = getAudioCandidates(card);
@@ -122,9 +142,15 @@ export async function playOfficialAudio(card, onStart) {
   }
 
   let lastReason = 'not-found';
+  let triedExplicit = false;
 
   for (const url of candidates) {
+    const explicit = isExternalAudioUrl(url) ||
+      (card.audioUrl?.trim() && url.includes(card.audioUrl.trim())) ||
+      (card.audioFile?.trim() && url.endsWith(card.audioFile.trim()));
+
     if (isExternalAudioUrl(url)) {
+      triedExplicit = true;
       for (const tryUrl of urlsForDirectPlay(url)) {
         try {
           await playUrlDirect(tryUrl, onStart);
@@ -152,7 +178,10 @@ export async function playOfficialAudio(card, onStart) {
       if (!response) {
         response = await fetch(url, { mode: 'cors' });
         if (!response?.ok) {
-          lastReason = 'http-' + (response?.status || 0);
+          if (explicit) {
+            triedExplicit = true;
+            lastReason = 'http-' + (response?.status || 0);
+          }
           continue;
         }
         if ('caches' in window) {
@@ -163,6 +192,7 @@ export async function playOfficialAudio(card, onStart) {
         }
       }
 
+      if (explicit) triedExplicit = true;
       const blob = await response.blob();
       if (!blob || blob.size < 64) {
         lastReason = 'empty';
@@ -172,13 +202,24 @@ export async function playOfficialAudio(card, onStart) {
       return { ok: true, source: 'local', tried: true };
     } catch (err) {
       const msg = String(err?.message || err || '');
-      if (/cors|network|failed to fetch/i.test(msg)) lastReason = 'cors';
-      else if (/NotAllowedError|interact/i.test(msg)) lastReason = 'autoplay';
-      else lastReason = 'play-error';
+      if (explicit) triedExplicit = true;
+      if (/cors|network|failed to fetch/i.test(msg)) {
+        // Fetch blockiert → trotzdem Direct-Play versuchen
+        try {
+          await playUrlDirect(url, onStart);
+          return { ok: true, source: 'local', tried: true };
+        } catch {
+          lastReason = 'cors';
+        }
+      } else if (/NotAllowedError|interact/i.test(msg)) {
+        lastReason = 'autoplay';
+      } else {
+        lastReason = 'play-error';
+      }
     }
   }
 
-  return { ok: false, tried: true, reason: lastReason };
+  return { ok: false, tried: triedExplicit, reason: lastReason };
 }
 
 function blobToDataUrl(blob) {
