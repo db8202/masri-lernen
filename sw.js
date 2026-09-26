@@ -1,4 +1,4 @@
-const CACHE = 'masri-lernen-v9';
+const CACHE = 'masri-lernen-v10';
 const ASSETS = [
   './', './index.html', './manifest.json', './css/styles.css',
   './js/app.js', './js/storage.js', './js/srs.js', './js/speech.js',
@@ -6,7 +6,7 @@ const ASSETS = [
   './js/audio-files.js', './js/audio-recorder.js', './js/utils.js', './js/toast.js', './js/charts.js',
   './js/vocab-pack.js', './js/categories.js', './js/record-assistant.js',
   './data/vocabulary.json', './data/grammar.json', './data/vokabeln.csv',
-  './data/vokabeln.xlsx', './data/egyptian-pack-sections.json', './icons/icon.svg', './js/xlsx.full.min.js',
+  './data/vokabeln.xlsx', './icons/icon.svg', './js/xlsx.full.min.js',
 ];
 
 self.addEventListener('install', (e) => {

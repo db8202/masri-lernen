@@ -119,22 +119,40 @@ export async function putVocabularyItems(items) {
 }
 
 export async function deleteVocabularyItem(id) {
+  await deleteVocabularyByIds([id]);
+}
+
+/** Karten + Fortschritt + Playlist-Refs löschen */
+export async function deleteVocabularyByIds(ids) {
+  if (!ids?.length) return 0;
+  const idSet = new Set(ids);
   const db = await openDB();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(['vocabulary', 'playlists'], 'readwrite');
-    tx.objectStore('vocabulary').delete(id);
-    const pStore = tx.objectStore('playlists');
-    const req = pStore.getAll();
-    req.onsuccess = () => {
-      for (const pl of req.result || []) {
-        if (pl.cardIds?.includes(id)) {
-          pl.cardIds = pl.cardIds.filter((x) => x !== id);
+    const transaction = db.transaction(['vocabulary', 'playlists', 'progress'], 'readwrite');
+    const vStore = transaction.objectStore('vocabulary');
+    for (const id of ids) vStore.delete(id);
+
+    const pStore = transaction.objectStore('playlists');
+    const pReq = pStore.getAll();
+    pReq.onsuccess = () => {
+      for (const pl of pReq.result || []) {
+        if (pl.cardIds?.some((x) => idSet.has(x))) {
+          pl.cardIds = pl.cardIds.filter((x) => !idSet.has(x));
           pStore.put(pl);
         }
       }
     };
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
+
+    const progStore = transaction.objectStore('progress');
+    const progReq = progStore.getAll();
+    progReq.onsuccess = () => {
+      for (const row of progReq.result || []) {
+        if (idSet.has(row.cardId)) progStore.delete([row.profileId, row.cardId]);
+      }
+    };
+
+    transaction.oncomplete = () => resolve(ids.length);
+    transaction.onerror = () => reject(transaction.error);
   });
 }
 

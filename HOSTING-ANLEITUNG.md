@@ -9,7 +9,7 @@
 | Was | Wie |
 |-----|-----|
 | **Überall online** | App liegt auf GitHub Pages (HTTPS-URL) |
-| **Offline lernen** | PWA installieren + „Offline-Paket laden" |
+| **Offline lernen** | PWA installieren + „Aussprache einrichten (einmal)“ |
 | **Vokabellisten** | Excel/CSV importieren oder Google Sheet |
 | **Offizielle Aussprache** | MP3-Dateien im Ordner `audio/` |
 
@@ -71,18 +71,17 @@ Diese URL auf dem Handy speichern!
 
 ---
 
-## Teil 3: Offline-Paket laden (einmalig, mit Internet)
+## Teil 3: Aussprache offline einrichten (einmalig, mit Internet)
 
 1. App öffnen (installierte Version)
 2. Tab **„Meine Wörter"**
-3. Optional: **„Vokabel-Paket laden"** (~6.300 Wörter mit Audio)
-4. **„Offline-Paket laden"** tippen
-5. Warten bis „Offline bereit" erscheint
-6. **Flugmodus testen** – App sollte weiter funktionieren
+3. **„Aussprache einrichten (einmal)"** tippen (falls MP3s/Links vorhanden)
+4. Warten bis „Offline bereit" erscheint
+5. **Flugmodus testen** – App sollte weiter funktionieren
 
 Was gespeichert wird:
 - ✅ App-Oberfläche
-- ✅ Alle Vokabeln (IndexedDB)
+- ✅ Alle Vokabeln (IndexedDB) — nur Deutsch ↔ Masri
 - ✅ Sprachdateien aus `audio/`
 - ✅ Lernfortschritt (bleibt lokal auf dem Gerät)
 
@@ -106,9 +105,6 @@ Was gespeichert wird:
 
 ### Option C – Direkt in der App
 Tab **Meine Wörter** → Formular „Neue Vokabel eintragen"
-
-### Option D – Gratis Vokabel-Paket
-Tab **Meine Wörter** → **„Vokabel-Paket laden"** (~6.300 Wörter mit Lingualism-Audio)
 
 ---
 
@@ -137,7 +133,7 @@ aegyptisch-lernen/
 ### Hochladen zu GitHub
 1. MP3s in Ordner `audio/` legen
 2. Zu GitHub hochladen (gleiches Repo)
-3. App neu laden → **Offline-Paket laden**
+3. App neu laden → **Aussprache einrichten (einmal)**
 
 ### Alternative: Audio direkt am Handy
 - **Meine Wörter → Sprachdateien hochladen** (mehrere MP3s)

@@ -19,7 +19,7 @@ import { cacheAllAudio, importAudioFiles, fileToAudioData, autoAudioFilename, ha
 import { esc, $, $$, genderLabel, suggestAudioFilename } from './utils.js';
 import { toast, confirmDialog } from './toast.js';
 import { HELP, showHelpDialog, maybeShowOnboarding, dismissOnboarding } from './help.js';
-import { importEgyptianPack } from './vocab-pack.js';
+import { cleanupEnglishPackImports } from './vocab-pack.js';
 import { listCategories, renameCategory, mergeCategories, deleteCategory } from './categories.js';
 import { getMissingAudioCards, countMissingAudio } from './record-assistant.js';
 import { speakTestSample } from './speech.js';
@@ -39,6 +39,7 @@ async function boot() {
   ]);
   await initDefaultData(await vocabRes.json());
   state.grammar = await grammarRes.json();
+  const packCleanup = await cleanupEnglishPackImports();
   await initSpeech();
   await refreshState();
   bindUI();
@@ -48,6 +49,9 @@ async function boot() {
   initNotifications(state.settings, state.activeProfileId, state.settings?.dailyGoal);
   maybeShowOnboarding();
   renderHelpTab();
+  if (packCleanup.removed > 0) {
+    toast(`${packCleanup.removed} englische Pack-Wörter entfernt (nur DE↔Masri).`, 'info', 7000);
+  }
 }
 
 async function refreshState() {
@@ -91,7 +95,7 @@ function bindUI() {
   $$('[data-help]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const key = btn.dataset.help;
-      const titles = { audio: 'Sprachdateien', offline: 'Offline', excel: 'Excel', modes: 'Lernmodi', profiles: 'Profile', playlists: 'Listen', pack: 'Vokabel-Paket' };
+      const titles = { audio: 'Sprachdateien', offline: 'Offline', excel: 'Excel', modes: 'Lernmodi', profiles: 'Profile', playlists: 'Listen', languages: 'Sprachen' };
       showHelpDialog(titles[key] || 'Hilfe', HELP[key] || '');
     });
   });
@@ -110,7 +114,6 @@ function bindUI() {
   $('#playlist-form').addEventListener('submit', onPlaylistSave);
   $('#btn-delete-playlist').addEventListener('click', onDeletePlaylist);
   $('#playlist-word-search').addEventListener('input', renderPlaylistPicker);
-  $('#btn-import-pack').addEventListener('click', onImportPack);
   $('#btn-record-skip').addEventListener('click', () => advanceRecordAssistant(false));
   $('#btn-record-done').addEventListener('click', () => advanceRecordAssistant(true));
 
@@ -389,31 +392,6 @@ async function onDeletePlaylist() {
   renderPlaylists();
 }
 
-async function onImportPack() {
-  const btn = $('#btn-import-pack');
-  const status = $('#pack-import-status');
-  if (!confirmDialog('~6.300 Wörter mit Audio laden? Das kann 1–2 Minuten dauern und braucht Internet.')) return;
-  btn.disabled = true;
-  try {
-    const r = await importEgyptianPack((p) => {
-      if (p.phase === 'fetch') {
-        status.textContent = `Lade ${p.done}/${p.total}… (${p.words || 0} Wörter)`;
-      } else {
-        status.textContent = 'Speichere in App…';
-      }
-    });
-    state.vocabulary = await getAllVocabulary();
-    status.textContent = `✅ Fertig: ${r.added} neu, ${r.updated} aktualisiert · ${r.total} gesamt`;
-    toast(`Paket importiert: ${r.added} neue Wörter!`, 'success');
-    toast('Als Nächstes: „Aussprache einrichten (einmal)“ tippen', 'info', 6000);
-    renderAll();
-  } catch (err) {
-    status.textContent = '';
-    toast(err.message, 'error');
-  }
-  btn.disabled = false;
-}
-
 function startRecordAssistant() {
   const missing = getMissingAudioCards(state.vocabulary);
   if (!missing.length) { toast('Alle Wörter haben Audio! 🎉', 'success'); return; }
@@ -436,7 +414,7 @@ function advanceRecordAssistant() {
 
 function renderHelpTab() {
   const el = $('#help-audio-text');
-  if (el) el.textContent = 'Aufnahme → Paket → Computer-Stimme. 🔊 immer Ton oder Meldung.';
+  if (el) el.textContent = 'Aufnahme → Datei/Link → Computer-Stimme. 🔊 immer Ton oder Meldung. Nur Deutsch ↔ Masri.';
 }
 
 function updateAudioHint() {
@@ -826,7 +804,7 @@ async function onOfflinePack() {
   const status = $('#offline-status');
   const pending = state.vocabulary.filter(needsOfflineEmbed).length;
   if (!pending && !state.vocabulary.some((v) => v.audioUrl || v.audioFile)) {
-    toast('Keine Sprach-Links im Paket. Zuerst Vokabel-Paket laden.', 'warn');
+    toast('Keine Sprachdateien hinterlegt. MP3s hochladen oder Wörter aufnehmen.', 'warn');
     return;
   }
   btn.disabled = true;

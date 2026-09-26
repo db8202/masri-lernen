@@ -32,8 +32,8 @@
    - Android: Menü → „App installieren" / „Zum Startbildschirm"
    - iPhone: Teilen ↗ → „Zum Home-Bildschirm"
 3. **Tab „Meine Wörter"**
-   - Optional: **Vokabel-Paket laden** (~6.300 Wörter + Audio)
-   - **Offline-Paket laden** (einmalig mit WLAN)
+   - Eigene Wörter (manuell/Excel, nur Deutsch + Masri)
+   - **Aussprache einrichten (einmal)** (mit WLAN, falls Audio vorhanden)
 4. **Flugmodus testen** ✈️
 
 ---
@@ -65,7 +65,7 @@ GitHub Actions deployt automatisch neu (1–2 Min.).
 
 - [ ] GitHub Pages URL funktioniert (HTTPS)
 - [ ] App auf Handy installiert
-- [ ] Vokabel-Paket oder eigene Wörter importiert
+- [ ] Eigene Wörter importiert (Excel/manuell, DE↔Masri)
 - [ ] Offline-Paket geladen
 - [ ] Flugmodus-Test bestanden
 - [ ] Optional: MP3s in `audio/` Ordner → erneut pushen → Offline-Paket neu laden
@@ -78,7 +78,7 @@ GitHub Actions deployt automatisch neu (1–2 Min.).
 |---------|--------|
 | Seite leer / 404 | Pages Source = **GitHub Actions**, 2 Min. warten |
 | PWA installiert nicht | Nur **HTTPS**-URL nutzen, nicht `file://` |
-| Offline klappt nicht | Erst **Offline-Paket laden** mit Internet |
+| Offline klappt nicht | Erst **Aussprache einrichten (einmal)** mit Internet |
 | Workflow rot | Repo → Actions → Fehlerlog lesen |
 
 Ausführliche Anleitung: **`HOSTING-ANLEITUNG.md`**

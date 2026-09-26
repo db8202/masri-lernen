@@ -1,19 +1,20 @@
 /** Kurze Hilfe – Details nur auf Nachfrage */
 
 export const HELP = {
-  welcome: `3 Schritte: Lernen → Karte tippen → 🔊`,
+  welcome: `3 Schritte: Lernen → Karte tippen → 🔊
+Nur Deutsch ↔ ägyptisches Arabisch (Masri) — kein Englisch.`,
 
   audio: `Aussprache
 1. Eigene Aufnahme
-2. Paket-Link (online sofort) / eingebettet offline
+2. MP3 / Link (online) bzw. einmal einrichten (offline)
 3. Computer-Stimme
 
 Kein Ton? Toast erklärt warum.
-Besser: Paket laden → Aussprache einrichten → oder 🎙️ aufnehmen.`,
+Besser: 🎙️ aufnehmen oder MP3s unter Wörter.`,
 
   offline: `Wörter → „Aussprache einrichten (einmal)“ (WLAN). Danach offline.`,
 
-  excel: `Wörter → Excel → Vorlage → ausfüllen → hochladen.`,
+  excel: `Wörter → Excel → Vorlage (Deutsch + Masri) → ausfüllen → hochladen.`,
 
   modes: `Karten · Auswahl`,
 
@@ -21,7 +22,7 @@ Besser: Paket laden → Aussprache einrichten → oder 🎙️ aufnehmen.`,
 
   playlists: `Listen: Name + Wörter wählen → auf Start antippen.`,
 
-  pack: `Vokabel-Paket (~6300) unter Wörter. Danach „Aussprache einrichten“.`,
+  languages: `Nur Deutsch und Masri. Das frühere englische Gratis-Paket ist entfernt. Neue Wörter: manuell oder Excel.`,
 };
 
 export const ONBOARDING_STEPS = [
