@@ -73,11 +73,16 @@ export async function speakCard(card, options = {}) {
     }
   }
 
-  // 2) Offizielle URL / lokales audio/
+  // 2) Offizielle URL / lokales audio/ (externe URLs: Direct-Play)
   const fileResult = await playOfficialAudio(card, () => setSpeakButtonState(button, 'playing'));
   if (fileResult.ok) {
     setSpeakButtonState(button, 'idle');
     return { ok: true, source: fileResult.source || 'file', message: null };
+  }
+  if (fileResult.tried && fileResult.reason === 'autoplay') {
+    notify('Browser blockiert Audio – bitte nochmals tippen.', 'warn');
+  } else if (fileResult.tried && fileResult.reason === 'play-error') {
+    notify('Sprachdatei nicht abspielbar – versuche Computer-Stimme…', 'warn');
   }
 
   // 3) TTS-Fallback
@@ -95,7 +100,7 @@ export async function speakCard(card, options = {}) {
     setSpeakButtonState(button, 'playing');
     setTimeout(() => setSpeakButtonState(button, 'idle'), Math.max(800, (tts.durationMs || 1200)));
     if (tts.usedTransliteration) {
-      notify('Keine Arabisch-Stimme – Lautschrift wird gesprochen. Bessere Aussprache: Aufnahme oder Offline-Paket.', 'warn');
+      notify('Keine Arabisch-Stimme – Lautschrift. Besser: Aufnahme oder Aussprache einrichten.', 'warn');
     } else if (fileResult.tried) {
       notify('Keine Sprachdatei – Computer-Stimme.', 'info');
     }

@@ -5,13 +5,13 @@ export const HELP = {
 
   audio: `Aussprache
 1. Eigene Aufnahme
-2. Paket / Offline-Datei
+2. Paket-Link (online sofort) / eingebettet offline
 3. Computer-Stimme
 
 Kein Ton? Toast erklärt warum.
-Besser: Paket laden → Offline-Paket → oder 🎙️ aufnehmen.`,
+Besser: Paket laden → Aussprache einrichten → oder 🎙️ aufnehmen.`,
 
-  offline: `Offline: Wörter → Offline-Paket (einmal WLAN).`,
+  offline: `Wörter → „Aussprache einrichten (einmal)“ (WLAN). Danach offline.`,
 
   excel: `Wörter → Excel → Vorlage → ausfüllen → hochladen.`,
 
@@ -21,7 +21,7 @@ Besser: Paket laden → Offline-Paket → oder 🎙️ aufnehmen.`,
 
   playlists: `Listen: Name + Wörter wählen → auf Start antippen.`,
 
-  pack: `Vokabel-Paket (~6300) unter Wörter. Danach Offline-Paket.`,
+  pack: `Vokabel-Paket (~6300) unter Wörter. Danach „Aussprache einrichten“.`,
 };
 
 export const ONBOARDING_STEPS = [

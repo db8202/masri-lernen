@@ -110,6 +110,14 @@ export async function upsertVocabularyItem(item) {
   });
 }
 
+export async function putVocabularyItems(items) {
+  if (!items?.length) return 0;
+  return tx('vocabulary', 'readwrite', (store) => {
+    for (const item of items) store.put(item);
+    return items.length;
+  });
+}
+
 export async function deleteVocabularyItem(id) {
   const db = await openDB();
   return new Promise((resolve, reject) => {
@@ -171,10 +179,17 @@ export async function mergeVocabulary(items, signatureFn) {
     const sig = signatureFn(item);
     const match = bySig.get(sig);
     if (match) {
-      byId.set(match.id, { ...match, ...item, id: match.id });
+      const merged = { ...match, ...item, id: match.id };
+      if (!item.audioData && match.audioData) merged.audioData = match.audioData;
+      if (!item.audioUrl && match.audioUrl) merged.audioUrl = match.audioUrl;
+      byId.set(match.id, merged);
       updated++;
     } else if (item.id && byId.has(item.id)) {
-      byId.set(item.id, { ...byId.get(item.id), ...item });
+      const prev = byId.get(item.id);
+      const merged = { ...prev, ...item };
+      if (!item.audioData && prev.audioData) merged.audioData = prev.audioData;
+      if (!item.audioUrl && prev.audioUrl) merged.audioUrl = prev.audioUrl;
+      byId.set(item.id, merged);
       updated++;
     } else {
       const id = item.id || uid();

@@ -1,7 +1,7 @@
 import {
   initDefaultData, getAllVocabulary, getProfiles, getActiveProfileId, setActiveProfileId,
   createProfile, getSettings, saveSettings, getProgressMap, saveProgressEntry, resetProgress,
-  exportBackup, importBackup, upsertVocabularyItem, deleteVocabularyItem, recordDailyStats,
+  exportBackup, importBackup, upsertVocabularyItem, putVocabularyItems, deleteVocabularyItem, recordDailyStats,
   getDailyStatsHistory, uid, saveVocabulary, getAllPlaylists, upsertPlaylist, deletePlaylist,
 } from './storage.js';
 import {
@@ -15,7 +15,7 @@ import { initNotifications, requestNotificationPermission, scheduleReminderCheck
 import { buildMCOptions, renderMCOptions, getPromptText } from './quiz.js';
 import { renderProgressChart } from './charts.js';
 import { isRecordingSupported, startRecording, stopRecording } from './audio-recorder.js';
-import { cacheAllAudio, importAudioFiles, fileToAudioData, autoAudioFilename, hasAudioSource } from './audio-files.js';
+import { cacheAllAudio, importAudioFiles, fileToAudioData, autoAudioFilename, hasAudioSource, needsOfflineEmbed } from './audio-files.js';
 import { esc, $, $$, genderLabel, suggestAudioFilename } from './utils.js';
 import { toast, confirmDialog } from './toast.js';
 import { HELP, showHelpDialog, maybeShowOnboarding, dismissOnboarding } from './help.js';
@@ -405,6 +405,7 @@ async function onImportPack() {
     state.vocabulary = await getAllVocabulary();
     status.textContent = `✅ Fertig: ${r.added} neu, ${r.updated} aktualisiert · ${r.total} gesamt`;
     toast(`Paket importiert: ${r.added} neue Wörter!`, 'success');
+    toast('Als Nächstes: „Aussprache einrichten (einmal)“ tippen', 'info', 6000);
     renderAll();
   } catch (err) {
     status.textContent = '';
@@ -823,18 +824,50 @@ async function onCloudSync() {
 async function onOfflinePack() {
   const btn = $('#btn-offline-pack');
   const status = $('#offline-status');
+  const pending = state.vocabulary.filter(needsOfflineEmbed).length;
+  if (!pending && !state.vocabulary.some((v) => v.audioUrl || v.audioFile)) {
+    toast('Keine Sprach-Links im Paket. Zuerst Vokabel-Paket laden.', 'warn');
+    return;
+  }
   btn.disabled = true;
-  status.textContent = 'Lade Offline-Paket… (einmal online nötig)';
+  status.textContent = pending
+    ? 'Richte Aussprache ein… (' + pending + ' Dateien)'
+    : 'Prüfe Offline-Cache…';
   try {
     if ('serviceWorker' in navigator) {
       const reg = await navigator.serviceWorker.ready;
       await reg.update();
     }
-    const r = await cacheAllAudio(state.vocabulary, (done, total, saved) => {
-      status.textContent = `Audio: ${done}/${total} (${saved} gespeichert)`;
-    });
-    status.textContent = `✅ Offline bereit: ${r.cached} Sprachdateien + App gecacht. Flugmodus testen!`;
-    toast('Offline-Paket geladen!', 'success');
+    const r = await cacheAllAudio(
+      state.vocabulary,
+      (done, total, saved, phase, stats) => {
+        if (phase === 'embed' && stats) {
+          status.textContent = 'Einbetten: ' + done + '/' + total
+            + ' · offline ' + stats.embedded
+            + (stats.onlineOnly ? ' · online-only ' + stats.onlineOnly : '');
+        } else {
+          status.textContent = 'Audio: ' + done + '/' + total + ' (' + saved + ' gespeichert)';
+        }
+      },
+      async (cards) => {
+        await putVocabularyItems(cards);
+      },
+    );
+    if (r.updated) {
+      state.vocabulary = r.updated;
+    }
+    const parts = [];
+    if (r.embedded) parts.push(r.embedded + ' offline');
+    if (r.onlineOnly) parts.push(r.onlineOnly + ' online-only');
+    status.textContent = parts.length
+      ? ('✅ Fertig: ' + parts.join(' · ') + '. Online geht immer; Offline wo eingebettet.')
+      : ('✅ Bereit: ' + r.cached + ' gecacht.');
+    if (r.embedded) toast('Aussprache eingerichtet: ' + r.embedded + ' offline', 'success');
+    else toast('Aussprache eingerichtet', 'success');
+    if (r.onlineOnly) {
+      toast(r.onlineOnly + ' online-only (ohne WLAN nur Computer-Stimme)', 'warn', 5000);
+    }
+    renderData();
   } catch (err) {
     status.textContent = '';
     toast(err.message, 'error');
