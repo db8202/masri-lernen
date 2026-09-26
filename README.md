@@ -7,7 +7,6 @@ Kostenlose PWA zum Lernen von **Ägyptisch-Arabisch (Masri)** mit Deutsch.
 ### Lernen
 - 🃏 **Karteikarten** (Gewusst / Noch üben)
 - 🔘 **Auswahl-Quiz** (4 Antworten)
-- ⌨️ **Eingabe-Quiz** (Antwort eintippen)
 - 📂 **11 Kategorien** + Sätze
 - 🔄 **Spaced Repetition**
 - ♂♀ **Geschlechts-Modus** (Mann/Frau/Beides)

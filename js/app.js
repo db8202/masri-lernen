@@ -12,11 +12,11 @@ import { initSpeech, speakCard } from './speech.js';
 import { importFile, downloadTemplate, normalizeGender, normalizeType } from './import.js';
 import { syncFromGoogleSheet, syncViaWebApp, shareBackup } from './sync.js';
 import { initNotifications, requestNotificationPermission, scheduleReminderCheck } from './notifications.js';
-import { buildMCOptions, renderMCOptions, getPromptText, getTypePrompt } from './quiz.js';
+import { buildMCOptions, renderMCOptions, getPromptText } from './quiz.js';
 import { renderProgressChart } from './charts.js';
 import { isRecordingSupported, startRecording, stopRecording } from './audio-recorder.js';
 import { cacheAllAudio, importAudioFiles, fileToAudioData, autoAudioFilename, hasAudioSource } from './audio-files.js';
-import { esc, $, $$, genderLabel, answersMatch, suggestAudioFilename } from './utils.js';
+import { esc, $, $$, genderLabel, suggestAudioFilename } from './utils.js';
 import { toast, confirmDialog } from './toast.js';
 import { HELP, showHelpDialog, maybeShowOnboarding, dismissOnboarding } from './help.js';
 import { importEgyptianPack } from './vocab-pack.js';
@@ -61,7 +61,12 @@ async function refreshState() {
   }
   state.settings = await getSettings(state.activeProfileId);
   state.progressMap = await getProgressMap(state.activeProfileId);
-  state.selectedMode = state.settings?.studyMode || 'flashcard';
+  // Eingabe-Modus entfernt (kein arabisches Keyboard nötig)
+  if (state.settings?.studyMode === 'type') {
+    state.settings.studyMode = 'flashcard';
+    await saveSettings(state.activeProfileId, state.settings);
+  }
+  state.selectedMode = state.settings?.studyMode === 'mc' ? 'mc' : 'flashcard';
 }
 
 function sessionOptions(opts = {}) {
@@ -136,8 +141,6 @@ function bindUI() {
   $('#btn-record').addEventListener('click', (e) => { e.stopPropagation(); toggleRecording(); });
   $('#btn-back-learn').addEventListener('click', () => switchView('home'));
   $('#btn-finished-home').addEventListener('click', () => switchView('home'));
-  $('#btn-type-check').addEventListener('click', checkTypedAnswer);
-  $('#type-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') checkTypedAnswer(); });
 
   const runAudioTest = (btn) => speakTestSample(btn).catch(() => {});
   $('#btn-test-audio')?.addEventListener('click', () => runAudioTest($('#btn-test-audio')));
@@ -583,7 +586,8 @@ async function onDeleteVocab(id) {
 }
 
 function startSession(opts = {}) {
-  const mode = state.selectedMode || state.settings?.studyMode || 'flashcard';
+  let mode = state.selectedMode || state.settings?.studyMode || 'flashcard';
+  if (mode === 'type') mode = 'flashcard';
   let optsMerged = { ...opts };
 
   if (opts.playlistId) {
@@ -608,30 +612,30 @@ function resetLearnUI() {
   $('#record-assistant-actions')?.classList.add('hidden');
   $('#record-assistant-banner')?.classList.add('hidden');
   $('#learn-finished').classList.add('hidden');
-  ['panel-flashcard', 'panel-mc', 'panel-type'].forEach((id) => $(`#${id}`)?.classList.add('hidden'));
+  ['panel-flashcard', 'panel-mc'].forEach((id) => $(`#${id}`)?.classList.add('hidden'));
   state.flipped = false;
 }
 
 function showCurrentItem() {
   const { queue, index, studyMode, recordAssistant } = state.session;
   if (index >= queue.length) { finishSession(); return; }
-  const mode = recordAssistant ? 'flashcard' : (studyMode || 'flashcard');
-  ['panel-flashcard', 'panel-mc', 'panel-type'].forEach((id) => $(`#${id}`)?.classList.toggle('hidden', id !== `panel-${mode}`));
+  let mode = recordAssistant ? 'flashcard' : (studyMode || 'flashcard');
+  if (mode !== 'mc') mode = 'flashcard';
+  ['panel-flashcard', 'panel-mc'].forEach((id) => $(`#${id}`)?.classList.toggle('hidden', id !== `panel-${mode}`));
   $('#learn-finished').classList.add('hidden');
   $('#record-assistant-banner')?.classList.toggle('hidden', !recordAssistant);
   $('#record-assistant-actions')?.classList.toggle('hidden', !recordAssistant);
   if (recordAssistant) $('#learn-actions')?.classList.add('hidden');
 
-  const labels = { flashcard: recordAssistant ? 'Aufnahme-Assistent' : 'Karten', mc: 'Auswahl', type: 'Eingabe' };
+  const labels = { flashcard: recordAssistant ? 'Aufnahme-Assistent' : 'Karten', mc: 'Auswahl' };
   $('#learn-mode-label').textContent = labels[mode];
   $('#learn-counter').textContent = `${index + 1} / ${queue.length}`;
   if (recordAssistant && $('#record-assistant-hint')) {
     $('#record-assistant-hint').textContent = 'Tippe Aufnahme, sprich das Wort, stoppe — dann „Fertig → Weiter".';
   }
   const card = queue[index];
-  if (mode === 'flashcard') showFlashcard(card);
-  else if (mode === 'mc') showMC(card);
-  else showType(card);
+  if (mode === 'mc') showMC(card);
+  else showFlashcard(card);
 }
 
 function showFlashcard(card) {
@@ -664,31 +668,6 @@ function showMC(card) {
   const container = $('#mc-options');
   container.dataset.locked = '';
   renderMCOptions(container, buildMCOptions(card, state.vocabulary, dir), correct, (q) => completeCard(q));
-}
-
-function showType(card) {
-  const dir = card._direction || 'de-eg';
-  const prompt = getTypePrompt(card, dir);
-  $('#type-category').textContent = card.category;
-  $('#type-prompt').textContent = prompt.text;
-  $('#type-prompt').dir = prompt.dir;
-  $('#type-input').value = '';
-  $('#type-input').placeholder = prompt.placeholder;
-  $('#type-feedback').classList.add('hidden');
-}
-
-function checkTypedAnswer() {
-  const card = state.session.queue[state.session.index];
-  const ok = answersMatch($('#type-input').value, card, card._direction || 'de-eg');
-  const fb = $('#type-feedback');
-  fb.classList.remove('hidden');
-  if (ok) { fb.textContent = '✓ Richtig!'; fb.className = 'type-feedback correct'; setTimeout(() => completeCard(2), 600); }
-  else {
-    const dir = card._direction || 'de-eg';
-    fb.textContent = `✗ Richtig: ${dir === 'de-eg' ? card.egyptian : card.german}`;
-    fb.className = 'type-feedback wrong';
-    setTimeout(() => completeCard(0), 1400);
-  }
 }
 
 function onCardTap(e) {
@@ -750,7 +729,7 @@ async function completeCard(quality) {
 }
 
 async function finishSession() {
-  ['panel-flashcard', 'panel-mc', 'panel-type'].forEach((id) => $(`#${id}`)?.classList.add('hidden'));
+  ['panel-flashcard', 'panel-mc'].forEach((id) => $(`#${id}`)?.classList.add('hidden'));
   $('#record-assistant-banner')?.classList.add('hidden');
   $('#record-assistant-actions')?.classList.add('hidden');
   $('#learn-finished').classList.remove('hidden');

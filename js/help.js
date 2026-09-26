@@ -15,7 +15,7 @@ Besser: Paket laden → Offline-Paket → oder 🎙️ aufnehmen.`,
 
   excel: `Wörter → Excel → Vorlage → ausfüllen → hochladen.`,
 
-  modes: `Karten · Auswahl · Eingabe`,
+  modes: `Karten · Auswahl`,
 
   profiles: `Oben rechts 👤 – getrennte Profile.`,
 
