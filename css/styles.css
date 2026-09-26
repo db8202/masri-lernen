@@ -43,7 +43,15 @@ body {
   flex-shrink: 0;
 }
 
-.logo { font-size: 1.15rem; }
+.logo {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  background: linear-gradient(135deg, #5eead4, #14b8a6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
 
 .bottom-nav {
   position: fixed;
@@ -85,37 +93,47 @@ body {
   background: rgba(20, 184, 166, .12);
 }
 
-.home-hero { text-align: center; padding: 1.25rem 1rem; }
-
-.hero-top {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
+.home-hero {
+  text-align: center;
+  padding: 1.5rem 1rem 1.25rem;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(20,184,166,.28), transparent 55%),
+    var(--surface);
 }
 
-.hero-message {
-  font-size: .95rem;
+.hero-status {
+  font-size: .8rem;
   color: var(--muted);
-  text-align: left;
-  max-width: 12rem;
+  margin: .85rem 0 1rem;
+  letter-spacing: .02em;
 }
 
-.progress-ring-sm {
-  width: 72px;
-  height: 72px;
-}
-
+.progress-ring-sm { width: 72px; height: 72px; }
 .progress-ring-sm span { font-size: 1.25rem; }
+
+.progress-ring-lg {
+  width: 112px;
+  height: 112px;
+  margin: 0 auto;
+}
+
+.progress-ring-lg span { font-size: 1.6rem; }
+.progress-ring-lg small { font-size: .75rem; }
 
 .btn-hero {
   width: 100%;
-  padding: 1.1rem 1rem;
-  font-size: 1.15rem;
+  padding: 1.2rem 1rem;
+  font-size: 1.2rem;
   font-weight: 700;
-  border-radius: 14px;
-  margin-bottom: .5rem;
+  border-radius: 16px;
+  margin-bottom: .45rem;
+  box-shadow: 0 10px 28px rgba(15, 118, 110, .35);
+}
+
+.btn-secondary-quiet {
+  opacity: .85;
+  font-size: .9rem;
+  padding: .65rem 1rem;
 }
 
 .btn-block { width: 100%; margin-top: .45rem; }
@@ -217,16 +235,12 @@ body.is-learning #app { padding-bottom: var(--safe-bottom); }
   display: flex;
   align-items: center;
   justify-content: space-between;
-}
-
-.logo {
-  font-size: 1.35rem;
-  font-weight: 700;
+  gap: .35rem;
 }
 
 .subtitle {
   color: var(--muted);
-  font-size: .875rem;
+  font-size: .8rem;
   margin-top: .25rem;
 }
 
@@ -336,6 +350,134 @@ body.is-learning #app { padding-bottom: var(--safe-bottom); }
   margin-top: .75rem;
   background: var(--surface2);
   color: var(--accent);
+  min-width: 3.5rem;
+}
+
+.btn-audio-lg {
+  min-height: 3.25rem;
+  min-width: 4.5rem;
+  font-size: 1.35rem;
+  padding: .85rem 1.25rem;
+  border-radius: 14px;
+}
+
+.btn-audio.is-loading,
+.btn-audio.is-playing {
+  opacity: .85;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+}
+
+.btn-audio.is-error {
+  border: 1px solid var(--danger);
+  color: #fca5a5;
+}
+
+.btn-grade {
+  min-height: 3.4rem;
+  font-size: 1.05rem;
+  border-radius: 14px;
+}
+
+.audio-row {
+  display: flex;
+  gap: .65rem;
+  justify-content: center;
+  margin-top: 1rem;
+  width: 100%;
+}
+
+.audio-row .btn-audio { margin-top: 0; flex: 1; max-width: 9rem; }
+
+.audio-strip {
+  text-align: center;
+  padding: .9rem 1rem;
+}
+
+.hint-tight {
+  margin-top: .45rem;
+  font-size: .75rem;
+  color: var(--muted);
+}
+
+.learn-help {
+  text-align: center;
+  color: var(--muted);
+  font-size: .8rem;
+  min-height: 1.1rem;
+  margin-top: .75rem;
+}
+
+.finished-mark {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 1rem;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 2rem;
+  background: rgba(20,184,166,.2);
+  color: var(--primary);
+}
+
+.onboarding-modal {
+  text-align: center;
+  padding: 1.5rem 1.25rem;
+}
+
+.onboarding-brand {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 1.25rem;
+}
+
+.onboarding-steps {
+  display: flex;
+  gap: .65rem;
+  margin-bottom: 1.35rem;
+}
+
+.onboarding-card {
+  flex: 1;
+  background: var(--surface2);
+  border-radius: 14px;
+  padding: 1rem .5rem;
+  border: 1px solid rgba(255,255,255,.06);
+}
+
+.ob-num {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  margin: 0 auto .55rem;
+  border-radius: 50%;
+  background: rgba(20,184,166,.2);
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.onboarding-card p {
+  font-size: .82rem;
+  color: var(--text);
+  line-height: 1.25;
+}
+
+.nav-ico {
+  font-size: 1rem;
+  line-height: 1;
+  opacity: .9;
+}
+
+.logo {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  background: linear-gradient(135deg, #5eead4, #14b8a6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .icon-btn {

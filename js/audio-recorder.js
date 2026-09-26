@@ -43,7 +43,13 @@ function blobToBase64(blob) {
 }
 
 export function playRecordedAudio(audioData) {
-  if (!audioData) return false;
-  new Audio(audioData).play();
-  return true;
+  if (!audioData) return Promise.reject(new Error('Keine Aufnahme'));
+  return new Promise((resolve, reject) => {
+    const audio = new Audio(audioData);
+    audio.onended = () => resolve(true);
+    audio.onerror = () => reject(new Error('Aufnahme konnte nicht abgespielt werden'));
+    audio.play().then(() => {
+      // started
+    }).catch(reject);
+  });
 }

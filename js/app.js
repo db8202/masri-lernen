@@ -18,10 +18,11 @@ import { isRecordingSupported, startRecording, stopRecording } from './audio-rec
 import { cacheAllAudio, importAudioFiles, fileToAudioData, autoAudioFilename, hasAudioSource } from './audio-files.js';
 import { esc, $, $$, genderLabel, answersMatch, suggestAudioFilename } from './utils.js';
 import { toast, confirmDialog } from './toast.js';
-import { HELP, showHelpDialog, maybeShowWelcome } from './help.js';
+import { HELP, showHelpDialog, maybeShowOnboarding, dismissOnboarding } from './help.js';
 import { importEgyptianPack } from './vocab-pack.js';
 import { listCategories, renameCategory, mergeCategories, deleteCategory } from './categories.js';
 import { getMissingAudioCards, countMissingAudio } from './record-assistant.js';
+import { speakTestSample } from './speech.js';
 
 const state = {
   vocabulary: [], profiles: [], playlists: [], activeProfileId: null, settings: null,
@@ -45,7 +46,7 @@ async function boot() {
   setupInstallPrompt();
   renderAll();
   initNotifications(state.settings, state.activeProfileId, state.settings?.dailyGoal);
-  maybeShowWelcome();
+  maybeShowOnboarding();
   renderHelpTab();
 }
 
@@ -130,12 +131,20 @@ function bindUI() {
   $('#flashcard').addEventListener('click', onCardTap);
   $('#btn-wrong').addEventListener('click', () => completeCard(0));
   $('#btn-correct').addEventListener('click', () => completeCard(2));
-  $('#btn-speak').addEventListener('click', (e) => { e.stopPropagation(); speakCurrent(); });
+  $('#btn-speak').addEventListener('click', (e) => { e.stopPropagation(); speakCurrent($('#btn-speak')); });
+  $('#btn-speak-front')?.addEventListener('click', (e) => { e.stopPropagation(); speakCurrent($('#btn-speak-front')); });
   $('#btn-record').addEventListener('click', (e) => { e.stopPropagation(); toggleRecording(); });
   $('#btn-back-learn').addEventListener('click', () => switchView('home'));
   $('#btn-finished-home').addEventListener('click', () => switchView('home'));
   $('#btn-type-check').addEventListener('click', checkTypedAnswer);
   $('#type-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') checkTypedAnswer(); });
+
+  const runAudioTest = (btn) => speakTestSample(btn).catch(() => {});
+  $('#btn-test-audio')?.addEventListener('click', () => runAudioTest($('#btn-test-audio')));
+  $('#btn-test-audio-help')?.addEventListener('click', () => runAudioTest($('#btn-test-audio-help')));
+  $('#btn-test-audio-data')?.addEventListener('click', () => runAudioTest($('#btn-test-audio-data')));
+  $('#btn-onboarding-done')?.addEventListener('click', () => dismissOnboarding(true));
+  $('#btn-onboarding-skip')?.addEventListener('click', () => dismissOnboarding(true));
 
   ['input-daily-goal', 'select-speaker-gender',
     'check-gender-strict', 'check-words-only', 'check-reminder', 'input-reminder-time',
@@ -423,7 +432,7 @@ function advanceRecordAssistant() {
 
 function renderHelpTab() {
   const el = $('#help-audio-text');
-  if (el) el.textContent = HELP.audio.split('\n').slice(0, 6).join('\n') + '\n…';
+  if (el) el.textContent = 'Aufnahme → Paket → Computer-Stimme. 🔊 immer Ton oder Meldung.';
 }
 
 function updateAudioHint() {
@@ -434,9 +443,7 @@ function updateAudioHint() {
   const field = $('#vocab-audio-file');
   if (!german) { hint.textContent = ''; return; }
   if (!field.value.trim()) field.placeholder = suggested;
-  hint.textContent = suggested
-    ? `💡 Die App sucht automatisch: audio/${suggested}`
-    : '';
+  hint.textContent = suggested ? `audio/${suggested}` : '';
 }
 
 function audioBadge(v) {
@@ -447,26 +454,29 @@ function audioBadge(v) {
 
 function renderProfileGreeting() {
   const p = state.profiles.find((x) => x.id === state.activeProfileId);
-  $('#profile-greeting').textContent = p ? `Hallo ${p.name}! · Masri ↔ Deutsch` : 'Masri ↔ Deutsch';
+  $('#profile-greeting').textContent = p ? `${p.name}` : 'Masri · Deutsch';
 }
 
 function renderHome() {
   const goal = state.settings?.dailyGoal || 10;
   const today = getTodayCount(state.activeProfileId);
   const due = countDue(state.vocabulary, state.progressMap, sessionOptions());
+  const total = state.vocabulary.length;
   $('#daily-count').textContent = today;
   $('#daily-goal').textContent = goal;
   $('#daily-ring').style.setProperty('--pct', `${Math.min(100, Math.round((today / goal) * 100))}%`);
-  $('#daily-message').textContent = today >= goal ? '🎉 Tagesziel erreicht!' : `${goal - today} bis Ziel · ${due} fällig`;
+  $('#daily-message').textContent = today >= goal
+    ? `Ziel ✓ · ${total} Wörter`
+    : `${total} Wörter · ${due} fällig`;
   $('#due-count').textContent = due;
   const dir = state.settings?.direction || 'de-eg';
   $$('.dir-btn').forEach((b) => b.classList.toggle('active', b.dataset.dir === dir));
   $$('.mode-btn').forEach((b) => b.classList.toggle('active', b.dataset.mode === state.selectedMode));
   const categories = [...new Set(state.vocabulary.map((v) => v.category))].sort();
   $('#category-grid').innerHTML = categories.map((cat) => {
-    const total = state.vocabulary.filter((v) => v.category === cat).length;
+    const catTotal = state.vocabulary.filter((v) => v.category === cat).length;
     const learned = state.vocabulary.filter((v) => v.category === cat && getOrCreateProgress(state.progressMap, v.id).correctCount > 0).length;
-    return `<button class="category-btn" data-category="${esc(cat)}"><strong>${esc(cat)}</strong><small>${learned}/${total}</small></button>`;
+    return `<button class="category-btn" data-category="${esc(cat)}"><strong>${esc(cat)}</strong><small>${learned}/${catTotal}</small></button>`;
   }).join('');
   $('#category-grid').querySelectorAll('.category-btn').forEach((btn) => {
     btn.addEventListener('click', () => startSession({ category: btn.dataset.category }));
@@ -612,11 +622,11 @@ function showCurrentItem() {
   $('#record-assistant-actions')?.classList.toggle('hidden', !recordAssistant);
   if (recordAssistant) $('#learn-actions')?.classList.add('hidden');
 
-  const labels = { flashcard: recordAssistant ? 'Aufnahme-Assistent' : 'Karteikarten', mc: 'Auswahl-Quiz', type: 'Eingabe-Quiz' };
+  const labels = { flashcard: recordAssistant ? 'Aufnahme-Assistent' : 'Karten', mc: 'Auswahl', type: 'Eingabe' };
   $('#learn-mode-label').textContent = labels[mode];
   $('#learn-counter').textContent = `${index + 1} / ${queue.length}`;
   if (recordAssistant && $('#record-assistant-hint')) {
-    $('#record-assistant-hint').textContent = 'Tippe 🎙️ Aufnahme, sprich das Wort, stoppe — dann „Fertig → Weiter".';
+    $('#record-assistant-hint').textContent = 'Tippe Aufnahme, sprich das Wort, stoppe — dann „Fertig → Weiter".';
   }
   const card = queue[index];
   if (mode === 'flashcard') showFlashcard(card);
@@ -639,6 +649,8 @@ function showFlashcard(card) {
   state.flipped = !!ra;
   $('#flashcard').classList.toggle('flipped', !!ra);
   $('#learn-actions').classList.toggle('hidden', ra || !state.flipped);
+  const help = $('#learn-help');
+  if (help) help.textContent = state.flipped ? '' : 'Tippen = Antwort';
 }
 
 function showMC(card) {
@@ -684,9 +696,14 @@ function onCardTap(e) {
   state.flipped = true;
   $('#flashcard').classList.add('flipped');
   $('#learn-actions').classList.remove('hidden');
+  const help = $('#learn-help');
+  if (help) help.textContent = '';
 }
 
-function speakCurrent() { speakCard(state.session.queue[state.session.index]).catch(() => {}); }
+function speakCurrent(button) {
+  const card = state.session.queue[state.session.index];
+  speakCard(card, { button: button || $('#btn-speak') }).catch(() => {});
+}
 
 async function toggleRecording() {
   const btn = $('#btn-record');

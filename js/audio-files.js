@@ -50,20 +50,82 @@ export function autoAudioFilename(card) {
   return slug ? `${slug}.mp3` : '';
 }
 
-export async function playOfficialAudio(card) {
-  for (const url of getAudioCandidates(card)) {
-    try {
-      const cached = await caches.open(AUDIO_CACHE);
-      const hit = await cached.match(url);
-      const response = hit || await fetch(url);
-      if (!response?.ok) continue;
-      if (!hit) cached.put(url, response.clone());
-      const blob = await response.blob();
-      await new Audio(URL.createObjectURL(blob)).play();
-      return true;
-    } catch { /* nächster Kandidat */ }
+function playBlob(blob, onStart) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    const cleanup = () => {
+      try { URL.revokeObjectURL(url); } catch { /* ignore */ }
+    };
+    audio.onended = () => { cleanup(); resolve(); };
+    audio.onerror = () => { cleanup(); reject(new Error('Abspielen fehlgeschlagen')); };
+    audio.play().then(() => {
+      onStart?.();
+    }).catch((err) => {
+      cleanup();
+      reject(err);
+    });
+  });
+}
+
+/**
+ * Versucht alle Kandidaten. Liefert { ok, source, tried, reason }.
+ * Bei CORS/404 still weiter – nie „leer“ ohne Ergebnisobjekt.
+ */
+export async function playOfficialAudio(card, onStart) {
+  const candidates = getAudioCandidates(card);
+  if (!candidates.length) {
+    return { ok: false, tried: false, reason: 'no-candidates' };
   }
-  return false;
+
+  let lastReason = 'not-found';
+
+  for (const url of candidates) {
+    try {
+      let response = null;
+      if ('caches' in window) {
+        try {
+          const cached = await caches.open(AUDIO_CACHE);
+          const hit = await cached.match(url);
+          if (hit?.ok) response = hit;
+        } catch { /* cache unavailable */ }
+      }
+
+      if (!response) {
+        response = await fetch(url, { mode: 'cors' });
+        if (!response?.ok) {
+          lastReason = `http-${response?.status || 0}`;
+          continue;
+        }
+        if ('caches' in window) {
+          try {
+            const cached = await caches.open(AUDIO_CACHE);
+            cached.put(url, response.clone());
+          } catch { /* ignore cache write */ }
+        }
+      }
+
+      const blob = await response.blob();
+      if (!blob || blob.size < 64) {
+        lastReason = 'empty';
+        continue;
+      }
+      await playBlob(blob, onStart);
+      return {
+        ok: true,
+        source: url.startsWith('http') ? 'url' : 'local',
+        tried: true,
+      };
+    } catch (err) {
+      const msg = String(err?.message || err || '');
+      if (/cors|network|failed to fetch/i.test(msg)) lastReason = 'cors';
+      else if (/NotAllowedError|interact/i.test(msg)) lastReason = 'autoplay';
+      else lastReason = 'play-error';
+      /* nächster Kandidat */
+    }
+  }
+
+  return { ok: false, tried: true, reason: lastReason };
 }
 
 export async function cacheAllAudio(vocabulary, onProgress) {
